@@ -192,6 +192,40 @@ function resetColumns() {
   patientsCol = "No data found";
 }
 
+/**
+ * Checks if the given node has a value for the newPCRTestsByPublishDate tag.
+ * Some of the nodes in testing.xml have empty newPCRTestsByPublishDate tags
+ * which is why this is needed.
+ */
+ function hasNonEmptyTestsProcessedTag(node) {
+  return node.getElementsByTagName("newPCRTestsByPublishDate")[0].childNodes.length > 0
+}
+
+/**
+ * The 5 functions below are used to extract the content of a certain tag from
+ * a given node. For example, the extractDate function returns the value of the
+ * date tag from the given node.
+ */
+function extractDate(node) {
+  return node.getElementsByTagName('date')[0].textContent;
+}
+
+function extractNewCases(node) {
+  return node.getElementsByTagName('newCasesByPublishDate')[0].textContent;
+}
+
+function extractTestsProcessed(node) {
+  return node.getElementsByTagName('newPCRTestsByPublishDate')[0].textContent;
+}
+
+function extractTestCapacity(node) {
+  return node.getElementsByTagName('plannedPCRCapacityByPublishDate')[0].textContent;
+}
+
+function extractHospitalCases(node) {
+  return node.getElementsByTagName('hospitalCases')[0].textContent;
+}
+
 /*
  * This method fills the table when a date is specified. It looks at the 
  * resultsOption variable to decide which results to display - either the 
@@ -209,21 +243,21 @@ function fillTableForDate() {
   var patientsIndex = -1;
 
   for (let i = 0; i < cases.length; i++) {
-    if (cases[i].childNodes[3].childNodes[0].nodeValue == date) {
+    if (extractDate(cases[i]) == date) {
       casesIndex = i;
       break;
     }
   }
 
   for (let i = 0; i < tests.length; i++) {
-    if (tests[i].childNodes[3].childNodes[0].nodeValue == date) {
+    if (extractDate(tests[i]) == date) {
       testsIndex = i;
       break;
     }
   }
 
   for (let i = 0; i < patients.length; i++) {
-    if (patients[i].childNodes[3].childNodes[0].nodeValue == date) {
+    if (extractDate(patients[i]) == date) {
       patientsIndex = i;
       break;
     }
@@ -237,23 +271,21 @@ function fillTableForDate() {
   if (resultsOption == "on") {
     // If we found the specified date in cases.xml, update casesCol.
     if (casesIndex != -1) {
-      casesCol = cases[casesIndex].childNodes[4].childNodes[0].nodeValue;
+      casesCol = extractNewCases(cases[casesIndex]);
     }
     // Same idea for the other 2 lists.
     if (testsIndex != -1) {
       // Since not every newPCRTestsByPublishDate tag in testing.xml has a 
       // value, we must first check that there is a value before trying to 
       // access it. This check appears several other times also.
-      if (tests[testsIndex].childNodes[6].childNodes.length == 1) {
-        testsProcessedCol =
-          tests[testsIndex].childNodes[6].childNodes[0].nodeValue;
+      if (hasNonEmptyTestsProcessedTag(tests[testsIndex])) {
+        testsProcessedCol = extractTestsProcessed(tests[testsIndex]);
       }
-      testCapacityCol = tests[testsIndex].childNodes[4].childNodes[0].nodeValue;
+      testCapacityCol = extractTestCapacity(tests[testsIndex]);
     }
-
+ 
     if (patientsIndex != -1) {
-      patientsCol =
-        patients[patientsIndex].childNodes[4].childNodes[0].nodeValue;
+      patientsCol = extractHospitalCases(patients[patientsIndex]);
     }
 
     // If when we reach here we did not find data in the XML files with the
@@ -277,10 +309,8 @@ function fillTableForDate() {
       // latest date. This is so we can use the < comparator for the Date class
       // to easily compare.
       var dateObject = new Date(date);
-      var firstDate = new Date(
-        cases[cases.length - 1].childNodes[3].childNodes[0].nodeValue
-      );
-      var lastDate = new Date(cases[0].childNodes[3].childNodes[0].nodeValue);
+      var firstDate = new Date(extractDate(cases[cases.length - 1]));
+      var lastDate = new Date(extractDate(cases[0]));
 
       // There is no data before the date specified by the user so just return 
       // a table with the date they specified and "No data found" in the other
@@ -307,8 +337,8 @@ function fillTableForDate() {
     // into the table with all columns having appropriate values.
     for (let i = casesIndex; i < cases.length; i++) {
       resetColumns();
-      dateCol = cases[i].childNodes[3].childNodes[0].nodeValue;
-      casesCol = cases[i].childNodes[4].childNodes[0].nodeValue;
+      dateCol = extractDate(cases[i]);
+      casesCol = extractNewCases(cases[i]);
 
       // If the date is one of the first 3 dates in cases, then there is no
       // matching date in tests or in patients since cases.xml has more data. 
@@ -328,10 +358,10 @@ function fillTableForDate() {
       }
 
       if (j != -1 && j < tests.length) {
-        if (tests[j].childNodes[6].childNodes.length == 1) {
-          testsProcessedCol = tests[j].childNodes[6].childNodes[0].nodeValue;
+        if (hasNonEmptyTestsProcessedTag(tests[j])) {
+          testsProcessedCol = extractTestsProcessed(tests[j]);
         }
-        testCapacityCol = tests[j].childNodes[4].childNodes[0].nodeValue;
+        testCapacityCol = extractTestCapacity(tests[j]);
         j++;
       }
 
@@ -340,7 +370,7 @@ function fillTableForDate() {
       }
 
       if (k != -1 && k < patients.length) {
-        patientsCol = patients[k].childNodes[4].childNodes[0].nodeValue;
+        patientsCol = extractHospitalCases(patients[k]);
         k++;
       }
 
@@ -351,10 +381,8 @@ function fillTableForDate() {
   else if (resultsOption == "after") {
     if (casesIndex == -1) {
       var dateObject = new Date(date);
-      var firstDate = new Date(
-        cases[cases.length - 1].childNodes[3].childNodes[0].nodeValue
-      );
-      var lastDate = new Date(cases[0].childNodes[3].childNodes[0].nodeValue);
+      var firstDate = new Date(extractDate(cases[cases.length - 1]));
+      var lastDate = new Date(extractDate(cases[0]));
 
       // There is no data after the date specified by the user so just return a
       // table with the date they specified and "No data found" in the other
@@ -383,8 +411,8 @@ function fillTableForDate() {
     // the date the user specified.
     for (let i = casesIndex; i >= 0; i--) {
       resetColumns();
-      dateCol = cases[i].childNodes[3].childNodes[0].nodeValue;
-      casesCol = cases[i].childNodes[4].childNodes[0].nodeValue;
+      dateCol = extractDate(cases[i]);
+      casesCol = extractNewCases(cases[i]);
 
       // Once again it is possible for the current date to be in cases but not
       // in tests. Once i is 213, the dates of cases and tests are in sync so 
@@ -395,10 +423,10 @@ function fillTableForDate() {
       }
 
       if (j != -1 && j >= 0) {
-        if (tests[j].childNodes[6].childNodes.length == 1) {
-          testsProcessedCol = tests[j].childNodes[6].childNodes[0].nodeValue;
+        if (hasNonEmptyTestsProcessedTag(tests[j])) {
+          testsProcessedCol = extractTestsProcessed(tests[j]);
         }
-        testCapacityCol = tests[j].childNodes[4].childNodes[0].nodeValue;
+        testCapacityCol = extractTestCapacity(tests[j]);
         j--;
       }
 
@@ -410,7 +438,7 @@ function fillTableForDate() {
       }
 
       if (k != -1 && k >= 0) {
-        patientsCol = patients[k].childNodes[4].childNodes[0].nodeValue;
+        patientsCol = extractHospitalCases(patients[k]);
         k--;
       }
 
@@ -458,44 +486,35 @@ function fillTableForMonth(monthNumber) {
   // for this month. Iterate over each list backwards so that the results are
   // in chronological order.
   for (let i = cases.length - 1; i >= 0; i--) {
-    if (
-      cases[i].childNodes[3].childNodes[0].nodeValue.substr(5, 2) == monthNumber
+    if (extractDate(cases[i]).substr(5, 2) == monthNumber
     ) {
       casesForMonth.push(cases[i]);
       // Need to turn the value in the XML file into a Number before we can use
       // it for numerical addition (otherwise string concatenation occurs 
       // instead).
-      totalCases += Number(cases[i].childNodes[4].childNodes[0].nodeValue);
+      totalCases += Number(extractNewCases(cases[i]));
     }
   }
 
   // Same idea for the other lists but remember for testsProcessed an 
   // additional check is required
   for (let i = tests.length - 1; i >= 0; i--) {
-    if (
-      tests[i].childNodes[3].childNodes[0].nodeValue.substr(5, 2) == monthNumber
-    ) {
+    if (extractDate(tests[i]).substr(5, 2) == monthNumber) {
       testsForMonth.push(tests[i]);
-      if (tests[i].childNodes[6].childNodes.length == 1) {
-        totalTestsProcessed += Number(
-          tests[i].childNodes[6].childNodes[0].nodeValue
-        );
+      if (hasNonEmptyTestsProcessedTag(tests[i])) {
+        totalTestsProcessed += Number(extractTestsProcessed(tests[i]));
       }
-      totalTestCapacity += Number(
-        tests[i].childNodes[4].childNodes[0].nodeValue
-      );
+      totalTestCapacity += Number(extractTestCapacity(tests[i]));
     }
   }
 
   for (let i = patients.length - 1; i >= 0; i--) {
     if (
-      patients[i].childNodes[3].childNodes[0].nodeValue.substr(5, 2) ==
+      extractDate(patients[i]).substr(5, 2) ==
       monthNumber
     ) {
       patientsForMonth.push(patients[i]);
-      totalPatients += Number(
-        patients[i].childNodes[4].childNodes[0].nodeValue
-      );
+      totalPatients += Number(extractHospitalCases(patients[i]));
     }
   }
 
@@ -542,28 +561,23 @@ function fillTableForMonth(monthNumber) {
     // Loop over the lists and populate the table.
     for (let i = 0; i < casesForMonth.length; i++) {
       resetColumns();
-      dateCol = casesForMonth[i].childNodes[3].childNodes[0].nodeValue;
-      casesCol = casesForMonth[i].childNodes[4].childNodes[0].nodeValue;
+      dateCol = extractDate(casesForMonth[i]);
+      casesCol = extractNewCases(casesForMonth[i]);
 
       if (testsForMonth.length > 0 && j < testsForMonth.length) {
         // Check that the current test has the same date as the current case
-        if (testsForMonth[j].childNodes[3].childNodes[0].nodeValue == dateCol) {
-          if (testsForMonth[j].childNodes[6].childNodes.length == 1) {
-            testsProcessedCol =
-              testsForMonth[j].childNodes[6].childNodes[0].nodeValue;
+        if (extractDate(testsForMonth[j]) == dateCol) {
+          if (hasNonEmptyTestsProcessedTag(testsForMonth[j])) {
+            testsProcessedCol = extractTestsProcessed(testsForMonth[j]);
           }
-          testCapacityCol =
-            testsForMonth[j].childNodes[4].childNodes[0].nodeValue;
+          testCapacityCol = extractTestCapacity(testsForMonth[j]);
           j++;
         }
       }
 
       if (patientsForMonth.length > 0 && k < patientsForMonth.length) {
-        if (
-          patientsForMonth[k].childNodes[3].childNodes[0].nodeValue == dateCol
-        ) {
-          patientsCol =
-            patientsForMonth[k].childNodes[4].childNodes[0].nodeValue;
+        if (extractDate(patientsForMonth[k]) == dateCol) {
+          patientsCol = extractHospitalCases(patientsForMonth[k]);
           k++;
         }
       }
