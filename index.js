@@ -40,7 +40,7 @@ function initialize() {
       cases = this.responseXML.getElementsByTagName("data");
     }
   };
-  request.open("GET", "http://localhost:8080/cases.xml", true);
+  request.open("GET", "cases.xml", true);
   request.send();
 
   const request2 = new XMLHttpRequest();
@@ -49,7 +49,7 @@ function initialize() {
       tests = this.responseXML.getElementsByTagName("data");
     }
   };
-  request2.open("GET", "http://localhost:8080/testing.xml", true);
+  request2.open("GET", "testing.xml", true);
   request2.send();
 
   const request3 = new XMLHttpRequest();
@@ -58,7 +58,7 @@ function initialize() {
       patients = this.responseXML.getElementsByTagName("data");
     }
   };
-  request3.open("GET", "http://localhost:8080/hospital.xml", true);
+  request3.open("GET", "hospital.xml", true);
   request3.send();
 }
 
